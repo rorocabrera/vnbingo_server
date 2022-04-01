@@ -53,7 +53,7 @@ const job = Cron(varCron,  () => {
         
     const intervalo = setInterval(() => {
 
-          console.log(jugada.length);
+     
         if (jugada.length==75){
             endsorteo(); 
         }
