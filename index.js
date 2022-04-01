@@ -3,10 +3,11 @@ const express =  require('express');
 const app =  express();
 const schedule = require('node-schedule');
 const Cron = require("croner");
+const port =  process.env.PORT || 5050;
 
 
 //settings
-app.set('port', 5050);
+app.set('port', port);
 
 //static files
 app.use(express.static(path.join(__dirname, 'public')));
