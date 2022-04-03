@@ -74,8 +74,9 @@ const job = Cron(varCron,  () => {
         }
 
         if(ganaBingo){
-            io.emit('cantaron bingo', ganadoresBingo);
+            waitforwinnersBingo();
             console.log('se emitio cantaron bingo' +  JSON.stringify(ganadoresBingo));
+           
         }
 
       
@@ -94,6 +95,14 @@ const job = Cron(varCron,  () => {
             ganalinea=false;  
 
     }
+    async function waitforwinnersBingo(){
+        await sleep(3000);
+        io.emit('cantaron bingo', ganadoresBingo);
+            flag = true;     
+            ganaBingo=false;  
+
+    }
+
 
     async function endsorteo(){
         clearInterval(intervalo);
@@ -168,7 +177,7 @@ io.on('connection', (socket) => {
      socket.on('bingo', (datos) => { 
         ganadoresBingo.push(datos);
         console.log(datos);
-        ganaBingo = true;
+        
      });
 
         
