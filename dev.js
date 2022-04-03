@@ -72,9 +72,9 @@ const job = Cron(varCron,  () => {
         }
 
         if(ganaBingo){
-            io.emit('cantaron bingo', ganadoresBingo);
+            waitforwinnersBingo();
             console.log('se emitio cantaron bingo' +  JSON.stringify(ganadoresBingo));
-            ganaBingo=false;   
+           
         }
 
       
@@ -91,6 +91,14 @@ const job = Cron(varCron,  () => {
         io.emit('cantaron linea', ganadoresLinea);
             flag = true;     
             ganalinea=false;  
+
+    }
+
+    async function waitforwinnersBingo(){
+        await sleep(3000);
+        io.emit('cantaron bingo', ganadoresBingo);
+            flag = true;     
+            ganaBingo=false;  
 
     }
 

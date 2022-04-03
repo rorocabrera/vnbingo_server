@@ -180,6 +180,20 @@ io.on('connection', (socket) => {
         
      });
 
+     socket.on('linea', (datos) => { 
+        io.emit('stop linea', );
+       ganadoresLinea.push(datos);
+       console.log(datos);
+       ganalinea = true;
+    });
+
+    socket.on('bingo', (datos) => { 
+       io.emit('stop bingo', );
+       ganadoresBingo.push(datos);
+       console.log(datos);
+       ganaBingo = true;
+    });
+
         
     console.log('se establecio conexion');
     
