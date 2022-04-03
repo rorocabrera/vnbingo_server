@@ -99,6 +99,7 @@ const job = Cron(varCron,  () => {
         io.emit('cantaron bingo', ganadoresBingo);
             flag = true;     
             ganaBingo=false;  
+            endsorteo(); 
 
     }
 
