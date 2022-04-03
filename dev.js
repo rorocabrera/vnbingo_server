@@ -57,7 +57,7 @@ const job = Cron(varCron,  () => {
         }
         nextRun = job.msToNext();
 
-        if(!ganalinea && !flag && i<=75 ){
+        if(!ganalinea && !flag && i<=75 && !ganaBingo ){
 
          
         emitirbola();}
