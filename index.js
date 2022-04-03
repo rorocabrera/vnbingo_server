@@ -167,7 +167,7 @@ function clock() {
 
 io.on('connection', (socket) => {
 
-     io.emit('state', state);
+     socket.emit('state', state);
 
      socket.on('linea', (datos) => { 
         ganadoresLinea.push(datos);
