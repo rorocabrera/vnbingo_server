@@ -52,21 +52,18 @@ const job = Cron(varCron,  () => {
         
     const intervalo = setInterval(() => {
 
-        if (i==46){
+        if (i==75){
             endsorteo(); 
         }
         nextRun = job.msToNext();
 
-        if(!ganalinea && !flag && i<=46 ){
+        if(!ganalinea && !flag && i<=75 ){
 
          
         emitirbola();}
         
         else if(ganalinea && !flag) {
-            io.emit('cantaron linea', ganadoresLinea);
-            console.log('se emitio cantaron linea' +  JSON.stringify(ganadoresLinea));
-            flag = true;     
-            ganalinea=false;       
+           waitforwinners();    
         }
 
         else if (!ganalinea && flag){
@@ -85,8 +82,16 @@ const job = Cron(varCron,  () => {
                 } , bolAspeed); 
                 
     async function killsometime(){
-        await sleep(3000);
+        await sleep(5000);
         flag= false;
+    }
+
+    async function waitforwinners(){
+        await sleep(3000);
+        io.emit('cantaron linea', ganadoresLinea);
+            flag = true;     
+            ganalinea=false;  
+
     }
 
     async function endsorteo(){
@@ -159,12 +164,14 @@ io.on('connection', (socket) => {
      io.emit('state', state);
 
      socket.on('linea', (datos) => { 
+         io.emit('stop linea', );
         ganadoresLinea.push(datos);
         console.log(datos);
         ganalinea = true;
      });
 
      socket.on('bingo', (datos) => { 
+        io.emit('stop bingo', );
         ganadoresBingo.push(datos);
         console.log(datos);
         ganaBingo = true;

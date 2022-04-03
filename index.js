@@ -65,10 +65,7 @@ const job = Cron(varCron,  () => {
         emitirbola();}
         
         else if(ganalinea && !flag) {
-            io.emit('cantaron linea', ganadoresLinea);
-            console.log('se emitio cantaron linea' +  JSON.stringify(ganadoresLinea));
-            flag = true;     
-            ganalinea=false;       
+                 waitforwinners();
         }
 
         else if (!ganalinea && flag){
@@ -86,8 +83,16 @@ const job = Cron(varCron,  () => {
                 } , bolAspeed); 
                 
     async function killsometime(){
-        await sleep(3000);
+        await sleep(5000);
         flag= false;
+    }
+
+    async function waitforwinners(){
+        await sleep(3000);
+        io.emit('cantaron linea', ganadoresLinea);
+            flag = true;     
+            ganalinea=false;  
+
     }
 
     async function endsorteo(){
