@@ -16,22 +16,33 @@ const server = app.listen(app.get("port"), () => {
   console.log("server on port", app.get("port"));
 });
 
+
+const fs = require('fs');    //importar a index
+
+fs.readFile('./serverstate.txt',function(err, estado){
+    if (err) 
+        throw err;   
+    serverstate = estado == 'true';  
+
+   
+});
+
 const SocketIO = require("socket.io");
 const io = SocketIO(server);
-jugada = {jugada: [], seCantol: false};
+let jugada = {jugada: [], seCantol: false};
 let ganadoresLinea = [];
 let ganadoresBingo = [];
 let state = false;
-let varCron = "*/10 * * * *";
+let varCron = "*/5 * * * *";
 let nextRun = Cron(varCron).msToNext();
-let bolAspeed = 5000;
+let bolAspeed = 3000;
 let ganalinea = false;
 let ganaBingo = false;
 
 clock();
 
-
-const { addUser, removeUser, isUser, printUsers, dameCartones, addCarton, updateJugada, clearCartones, getPressed, getActive} = require("./usuarios");
+const {verifyLinea, verifyBingo} = require("./utils");
+const { addUser, removeUser, getActive, isUser, getEmail, printUsers, dameCartones, addCarton, updateJugada, clearCartones} = require("./usuarios");
 const {} = require("./utils");
 
 const job = Cron(varCron, () => {
@@ -46,12 +57,12 @@ const job = Cron(varCron, () => {
   io.emit("state", state);
 
   const intervalo = setInterval(() => {
-    if (jugada.length == 75) {
-      endsorteo();
+    if (i == 75) {
+    letsEnd();
     }
     nextRun = job.msToNext();
 
-    if (!ganalinea && !flag && jugada.length < 75 && !ganaBingo) {
+    if (!ganalinea && !flag && jugada.jugada.length < 75 && !ganaBingo) {
       emitirbola();
     } else if (ganalinea && !flag) {
       waitforwinners();
@@ -70,16 +81,24 @@ const job = Cron(varCron, () => {
     flag = false;
   }
 
+  async function letsEnd(){
+    await sleep(5000);
+    endsorteo();
+
+  }
+
   async function waitforwinners() {
+    flag = true;
     await sleep(3000);
     io.emit("cantaron linea", ganadoresLinea);
-    flag = true;
+    
     ganalinea = false;
   }
   async function waitforwinnersBingo() {
+    flag = true;
     await sleep(3000);
     io.emit("cantaron bingo", ganadoresBingo);
-    flag = true;
+  
     ganaBingo = false;
     endsorteo();
   }
@@ -111,16 +130,16 @@ const job = Cron(varCron, () => {
     let isnewnumber;
     i++;
     let rnd = Math.floor(Math.random() * 75) + 1;
-    isnewnumber = !jugada.includes(rnd);
+    isnewnumber = !jugada.jugada.includes(rnd);
     if (isnewnumber) {
-      jugada.push(rnd);
+      jugada.jugada.push(rnd);
       io.emit("bolita", rnd);
     }
     while (!isnewnumber) {
       rnd = Math.floor(Math.random() * 75) + 1;
-      isnewnumber = !jugada.includes(rnd);
+      isnewnumber = !jugada.jugada.includes(rnd);
       if (isnewnumber) {
-        jugada.push(rnd);
+        jugada.jugada.push(rnd);
         io.emit("bolita", rnd);
       }
     }
