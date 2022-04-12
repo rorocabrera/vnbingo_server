@@ -1,7 +1,378 @@
-git add .
+const path = require('path');
+const express =  require('express');
+const app =  express();
+const schedule = require('node-schedule');
+const Cron = require("croner");
 
-git commit -am "make it better" 
 
-git push heroku master
+
+//settings
+app.set('port', 5050);
+
+//static files
+app.use(express.static(path.join(__dirname, 'public')));
+
+//start the server
+const server = app.listen(app.get('port'), () =>{
+    console.log('server on port', app.get('port'))
+});
+
+const SocketIO =  require('socket.io');
+const io = SocketIO(server);
+
+let jugada = [];
+
+let ganadoresLinea= [];
+let ganadoresBingo= [];
+let state = false;
+let varCron = '*/2 * * * *';
+let nextRun = Cron(varCron).msToNext();
+let bolAspeed = 3000;
+let ganalinea = false;
+let ganaBingo= false;
+let serverstate;
+
+/////////////////////////////////
+
+
+const fs = require('fs');    //importar a index
+
+fs.readFile('./serverstate.txt',function(err, estado){
+    if (err) 
+        throw err;   
+    serverstate = estado == 'true';  
+     
+   jugada = JSON.parse(fs.readFileSync('jugada.json'));
+   
+});
+
+
+
+
+
+//////////////////////////////////////
+
+
+clock();
+
+
+const { addUser, removeUser, getUser, printUsers, addCarton} = require("./usuarios");
+
+
+const job = Cron(varCron,  () => {
+
+    ///////////////// importar a index
+    serverstate = false;
+    fs.writeFile('./serverstate.txt', 'false', function (err) {
+        if (err) return console.log(err);
+        });
+
+/////////////////
+
+    let flag = false;
+    let i;
+    console.log(Object.keys(jugada).length)
+    if (Object.keys(jugada).length==0) i = 1;
+    else i = jugada[Object.keys(jugada).length -1];
+    console.log(i);
+  
+    nextRun = job.msToNext();
+    state = true;
+    ganadoresLinea= [];
+    ganadoresBingo= [];
+    ganaBingo=false;
+    io.emit('state', state);
+        
+    const intervalo = setInterval(() => {
+
+        if (i==75){
+            endsorteo(); 
+        }
+        nextRun = job.msToNext();
+
+        if(!ganalinea && !flag && i<=75 && !ganaBingo ){
+
+         
+        emitirbola();}
+        
+        else if(ganalinea && !flag) {
+           waitforwinners();    
+        }
+
+        else if (!ganalinea && flag){
+            killsometime();                
+            
+        }
+
+        if(ganaBingo){
+            waitforwinnersBingo();
+            console.log('se emitio cantaron bingo' +  JSON.stringify(ganadoresBingo));
+           
+        }
+
+      
+      
+                } , bolAspeed); 
+
+            
+                
+    async function killsometime(){
+        await sleep(5000);
+        flag= false;
+    }
+
+    async function waitforwinners(){
+        await sleep(3000);
+        io.emit('cantaron linea', ganadoresLinea);
+            flag = true;     
+            ganalinea=false;  
+
+    }
+
+    async function waitforwinnersBingo(){
+        await sleep(3000);
+        io.emit('cantaron bingo', ganadoresBingo);
+            flag = true;     
+            ganaBingo=false;  
+            endsorteo(); 
+
+    }
+
+    async function endsorteo(){
+        clearInterval(intervalo);
+
+          /////////////////////////////////////
+          serverstate = true;
+          fs.writeFile('./serverstate.txt', 'true', function (err) {
+              if (err) return console.log(err);
+              });
+  
+              jugada = []; 
+  
+              fs.writeFile('./jugada.json', JSON.stringify(jugada), function (err) {
+                  if (err) return console.log(err);
+                  });
+  
+              
+  
+              /////////////////////////////////////////////
+        await sleep(5000);
+        console.log('se acabo');
+        clock();
+        i=0;
+        io.emit('nextRun', nextRun);
+        state = false;
+        io.emit('state', state);
+
+
+      
+
+       
+    }     
+    
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+ function emitirbola(){
+     
+        jugada.push(i);
+
+        
+        io.emit('bolita', i);
+        io.emit('state', state);
+        i++;
+
+        //////////////////
+
+
+        fs.writeFile('./jugada.json', JSON.stringify(jugada), function (err) {
+            if (err) return console.log(err);
+            });
+
+
+
+        /////////////
+     
+       if (i==6)i=16;
+       if (i==21) i=31;
+       if(i==36) i=46
+       if(i==51) i=61;
+       if(i==66) i==75
+        
+        return
+    }
+
+} ); ///job ends
+
+
+function clock() { 
+
+    const Interval = setInterval(() => {
+   
+        nextRun = job.msToNext(); 
+        if (nextRun==null){
+            nextRun = Cron(varCron).msToNext();  
+        }
+        io.emit('nextRun', nextRun);
+        if (nextRun<1000){
+         
+            clearInterval(Interval);
+        }
+                } , 1000); 
+}
+
+
+
+
+
+io.on('connection', (socket) => {
+
+  
+    
+
+     io.emit('state', state);
+
+     socket.on('linea', (datos) => { 
+         io.emit('stop linea', );
+        ganadoresLinea.push(datos);
+        console.log(datos);
+        ganalinea = true;
+     });
+
+     socket.on('bingo', (datos) => { 
+        io.emit('stop bingo', );
+        ganadoresBingo.push(datos);
+        console.log(datos);
+        ganaBingo = true;
+     });
+
+
+        
+    console.log('se establecio conexion');
+    //console.log(io.sockets.sockets);
+
+
+    ///////////////////////////////
+
+    if(!serverstate && !state && Object.keys(jugada).length>0){
+        console.log('se emite restablece jugada');
+        io.emit('restablece jugada', jugada);
+    }
+
+    
+//////////////////////////////
+
+
+    socket.on('registrar', (data) =>{   
+        let datos = JSON.parse(data);
+        console.log('se recibio registrar');
+        const usuario = addUser({sId: socket.id, uId: datos.uid, email: datos.email, carton: datos.carton});
+
+        /////////////////////////////////////////////////////////////////////
+      
+        socket.emit('jugada', jugada);
+
+
+
+
+
+
+
+    });
+
+    socket.on('disconnect', (reason) => {
+
+        removeUser(socket.id);
+        console.log(socket.id + '  has been disconected');
+        printUsers(0);
+    })
+
+
+    socket.on('compra carton', (uid) => {
+        console.log('se recibio compra carton');
+
+        let carton = genCarton();
+        addCarton(uid, carton);
+        console.log(JSON.stringify(carton))
+        socket.emit('venta carton', carton);
+})
+     
+  
+});
+
+function genCarton(){
+let Carton = {
+    B: [], I: [], N: [], G: [], O: []
+}
+Carton.B = popColumns('B');      //popColumnsDev para pruebas popColumns para jugar
+Carton.I = popColumns('I');
+Carton.N = popColumns('N');
+Carton.G = popColumns('G');
+Carton.O = popColumns('O');
+
+Carton.N[2] = 0;
+
+
+return Carton;
+
+
+}
+
+function popColumns(letter){
+    let column = [];
+    let min = 0;
+    let max = 0;
+    switch(letter){
+        case 'B': 
+            min = 1;
+            max = 16;
+            break;
+        case 'I': 
+            min = 16;
+            max = 31;
+            break;
+        case 'N': 
+            min = 31;
+            max = 46;
+            break; 
+        case 'G': 
+            min = 46;
+            max = 61;
+            break;
+        case 'O': 
+            min = 61;
+            max = 76;
+            break;
+        default:
+            return column;
+    }
+    for (let i = 0; i<5; i++){
+        let rnd = Math.floor(Math.random() * (max - min)) + min;
+
+            while (column.includes(rnd)) {
+                rnd = Math.floor(Math.random() * (max - min)) + min;
+
+            }
+        column.push(rnd);
+    }
+
+    return column;
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+ 
+
 
 

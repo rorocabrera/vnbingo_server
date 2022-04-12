@@ -1,304 +1,284 @@
-const path = require('path');
-const express =  require('express');
-const app =  express();
-const schedule = require('node-schedule');
+const path = require("path");
+const express = require("express");
+const app = express();
+const schedule = require("node-schedule");
 const Cron = require("croner");
-const port =  process.env.PORT || 5050;
-
+const port = process.env.PORT || 5050;
 
 //settings
-app.set('port', port);
+app.set("port", port);
 
 //static files
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, "public")));
 
 //start the server
-const server = app.listen(app.get('port'), () =>{
-    console.log('server on port', app.get('port'))
+const server = app.listen(app.get("port"), () => {
+  console.log("server on port", app.get("port"));
 });
 
-
-
-const SocketIO =  require('socket.io');
+const SocketIO = require("socket.io");
 const io = SocketIO(server);
-let jugada = [];
-let ganadoresLinea= [];
-let ganadoresBingo= [];
+jugada = {jugada: [], seCantol: false};
+let ganadoresLinea = [];
+let ganadoresBingo = [];
 let state = false;
-let varCron = '*/10 * * * *';
+let varCron = "*/10 * * * *";
 let nextRun = Cron(varCron).msToNext();
 let bolAspeed = 5000;
 let ganalinea = false;
-let ganaBingo= false;
-
+let ganaBingo = false;
 
 clock();
 
 
+const { addUser, removeUser, isUser, printUsers, dameCartones, addCarton, updateJugada, clearCartones, getPressed, getActive} = require("./usuarios");
+const {} = require("./utils");
 
-const { addUser, removeUser, getUser, printUsers} = require("./usuarios");
+const job = Cron(varCron, () => {
+  let flag = false;
 
+  let i = 1;
+  nextRun = job.msToNext();
+  state = true;
+  ganadoresLinea = [];
+  ganadoresBingo = [];
+  ganaBingo = false;
+  io.emit("state", state);
 
-const job = Cron(varCron,  () => {
-    let flag = false;
-    MyInterval = null;
-    let i = 1;
+  const intervalo = setInterval(() => {
+    if (jugada.length == 75) {
+      endsorteo();
+    }
     nextRun = job.msToNext();
-    state = true;
-    jugada = []; 
-    ganadoresLinea= [];
-    ganadoresBingo= [];
-    ganaBingo=false;
-    io.emit('state', state);
-        
-    const intervalo = setInterval(() => {
 
-     
-        if (jugada.length==75){
-            endsorteo(); 
-        }
-        nextRun = job.msToNext();
-
-        if(!ganalinea && !flag && jugada.length<75 && !ganaBingo ){
-
-         
-        emitirbola();}
-        
-        else if(ganalinea && !flag) {
-                 waitforwinners();
-        }
-
-        else if (!ganalinea && flag){
-            killsometime();                
-            
-        }
-
-        if(ganaBingo){
-            waitforwinnersBingo();
-            console.log('se emitio cantaron bingo' +  JSON.stringify(ganadoresBingo));
-           
-        }
-
-      
-      
-                } , bolAspeed); 
-                
-    async function killsometime(){
-        await sleep(5000);
-        flag= false;
+    if (!ganalinea && !flag && jugada.length < 75 && !ganaBingo) {
+      emitirbola();
+    } else if (ganalinea && !flag) {
+      waitforwinners();
+    } else if (!ganalinea && flag) {
+      killsometime();
     }
 
-    async function waitforwinners(){
-        await sleep(3000);
-        io.emit('cantaron linea', ganadoresLinea);
-            flag = true;     
-            ganalinea=false;  
-
+    if (ganaBingo) {
+      waitforwinnersBingo();
+      console.log("se emitio cantaron bingo" + JSON.stringify(ganadoresBingo));
     }
-    async function waitforwinnersBingo(){
-        await sleep(3000);
-        io.emit('cantaron bingo', ganadoresBingo);
-            flag = true;     
-            ganaBingo=false;  
-            endsorteo(); 
+  }, bolAspeed);
 
+  async function killsometime() {
+    await sleep(5000);
+    flag = false;
+  }
+
+  async function waitforwinners() {
+    await sleep(3000);
+    io.emit("cantaron linea", ganadoresLinea);
+    flag = true;
+    ganalinea = false;
+  }
+  async function waitforwinnersBingo() {
+    await sleep(3000);
+    io.emit("cantaron bingo", ganadoresBingo);
+    flag = true;
+    ganaBingo = false;
+    endsorteo();
+  }
+
+  async function endsorteo() {
+    clearInterval(intervalo);
+    clearCartones();
+
+    serverstate = true;
+    fs.writeFile('./serverstate.txt', 'true', function (err) {
+        if (err) return console.log(err);
+        });
+
+    await sleep(5000);
+    jugada = {jugada: [], seCantol: false};
+    console.log("se acabo");
+    clock();
+    i = 0;
+    io.emit("nextRun", nextRun);
+    state = false;
+    io.emit("state", state);
+  }
+
+  function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  function emitirbola() {
+    let isnewnumber;
+    i++;
+    let rnd = Math.floor(Math.random() * 75) + 1;
+    isnewnumber = !jugada.includes(rnd);
+    if (isnewnumber) {
+      jugada.push(rnd);
+      io.emit("bolita", rnd);
+    }
+    while (!isnewnumber) {
+      rnd = Math.floor(Math.random() * 75) + 1;
+      isnewnumber = !jugada.includes(rnd);
+      if (isnewnumber) {
+        jugada.push(rnd);
+        io.emit("bolita", rnd);
+      }
     }
 
-
-    async function endsorteo(){
-        clearInterval(intervalo);
-        await sleep(5000);
-        console.log('se acabo');
-        clock();
-        i=0;
-        io.emit('nextRun', nextRun);
-        state = false;
-        io.emit('state', state);
-       
-    }     
-    
-    function sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
-    function emitirbola(){
-let isnewnumber;
-        i++;
-        let rnd = Math.floor(Math.random() * 75) + 1;
-        isnewnumber=!jugada.includes(rnd);
-        if(isnewnumber){
-            jugada.push(rnd);
-            io.emit('bolita', rnd);
-        }
-        while (!isnewnumber) {
-            rnd = Math.floor(Math.random() * 75) + 1;
-            isnewnumber=!jugada.includes(rnd);
-            if(isnewnumber){
-                jugada.push(rnd);
-                io.emit('bolita', rnd);
-            }
-        }
-        
-        io.emit('state', state);
-        return
-    }
-
-} );
-
-
-function clock() { 
-
-    const Interval = setInterval(() => {
-   
-        nextRun = job.msToNext(); 
-        if (nextRun==null){
-            nextRun = Cron(varCron).msToNext();  
-        }
-        io.emit('nextRun', nextRun);
-        if (nextRun<1000){
-            clearInterval(Interval);
-        }
-                } , 1000); 
-}
-
-
-
-
-
-io.on('connection', (socket) => {
-
-     socket.emit('state', state);
-
-     socket.on('linea', (datos) => { 
-        ganadoresLinea.push(datos);
-        console.log(datos);
-        ganalinea = true;
-     });
-
-     socket.on('bingo', (datos) => { 
-        ganadoresBingo.push(datos);
-        console.log(datos);
-        
-     });
-
-     socket.on('linea', (datos) => { 
-        io.emit('stop linea', );
-       ganadoresLinea.push(datos);
-       console.log(datos);
-       ganalinea = true;
-    });
-
-    socket.on('bingo', (datos) => { 
-       io.emit('stop bingo', );
-       ganadoresBingo.push(datos);
-       console.log(datos);
-       ganaBingo = true;
-    });
-
-        
-    console.log('se establecio conexion');
-    
-    socket.on('registrar', (data) =>{   
-        let datos = JSON.parse(data);
-        console.log(datos);
-        const usuario = addUser({sId: socket.id, uId: datos.uid, email: datos.email});
-    });
-
-    socket.on('disconnect', () => {
-        removeUser(socket.id);
-        console.log(socket.id + '  has been disconected');
-        printUsers(0);
-    })
-
-    socket.on('compra carton', (uid) => {
-        console.log('se recibio compra carton');
-
-        let carton = genCarton();
-        console.log(JSON.stringify(carton))
-        socket.emit('venta carton', carton);
-})
-     
-  
+    io.emit("state", state);
+    return;
+  }
 });
 
-function genCarton(){
-let Carton = {
-    B: [], I: [], N: [], G: [], O: []
-}
-Carton.B = popColumns('B');      //popColumnsDev para pruebas popColumns para jugar
-Carton.I = popColumns('I');
-Carton.N = popColumns('N');
-Carton.G = popColumns('G');
-Carton.O = popColumns('O');
-
-Carton.N[2] = 0;
-
-console.log(Carton);
-return Carton;
-
-
+function clock() {
+  const Interval = setInterval(() => {
+    nextRun = job.msToNext();
+    if (nextRun == null) {
+      nextRun = Cron(varCron).msToNext();
+    }
+    io.emit("nextRun", nextRun);
+    if (nextRun < 1000) {
+      clearInterval(Interval);
+    }
+  }, 1000);
 }
 
-function popColumns(letter){
-    let column = [];
-    let min = 0;
-    let max = 0;
+io.on("connection", (socket) => {
+  socket.emit("state", state);
 
+  socket.on('linea', (datos) => { 
+         
+    if(verifyLinea(datos, jugada.jugada)){
+    io.emit('stop linea', );
+    let data = JSON.parse(datos);
+    let email = getEmail(data.uid);
+    ganadoresLinea.push(email);
+    ganalinea = true;
+    jugada.seCantol = true;
 
-    switch(letter){
-        case 'B': 
-            min = 1;
-            max = 16;
-            break;
-        case 'I': 
-            min = 16;
-            max = 31;
-            break;
-        case 'N': 
-            min = 31;
-            max = 46;
-            break; 
-        case 'G': 
-            min = 46;
-            max = 61;
-            break;
-        case 'O': 
-            min = 61;
-            max = 76;
-            break;
-        default:
-            return column;
     }
 
-    for (let i = 0; i<5; i++){
-        let rnd = Math.floor(Math.random() * (max - min)) + min;
 
-            while (column.includes(rnd)) {
-                rnd = Math.floor(Math.random() * (max - min)) + min;
+ });
 
-            }
-        column.push(rnd);
+ socket.on('bingo', (datos, jugada) => { 
+     if(verifyBingo(datos, jugada.jugada)){
+    io.emit('stop bingo', );
+    let data = JSON.parse(datos);
+    let email = getEmail(data.uid);
+    ganadoresBingo.push(email);
+    console.log(datos);
+    ganaBingo = true;
+     }
+ });
+
+  console.log("se establecio conexion");
+
+  socket.on("registrar", (data) => {
+    let datos = JSON.parse(data);
+   
+    let index = isUser(datos.uid);
+    if(index != -1 && getActive(index)){        
+                ///*******************************************/////// */
+        let cartones = dameCartones(index);
+        cartones.forEach(function (e){
+            console.log(e);
+            socket.emit('venta carton', e);
+        });
+
+
     }
+    else addUser({sId: socket.id, uId: datos.uid, email: datos.email, carton: [], active: false});
 
-    return column;
-    
+    socket.emit('jugada', jugada);
+  });
+
+  socket.on("disconnect", () => {
+    removeUser(socket.id);
+    console.log(socket.id + "  has been disconected");
+    printUsers(0);
+  });
+
+  socket.on("compra carton", (uid) => {
+    console.log("se recibio compra carton");
+
+    let carton = genCarton();
+    addCarton(uid, carton);
+    console.log(JSON.stringify(carton));
+    socket.emit("venta carton", carton);
+  });
+
+  socket.on('jugada', (data) => {
+
+    console.log('se recibio jugada');
+    let datos = JSON.parse(data);
+    let index = isUser(datos.uid);
+    console.log(index + ' ' + datos.value + ' ' + datos.cartonIndex + ' ' + datos.numeroIndex);
+    updateJugada(index, datos.value, datos.cartonIndex, datos.numeroIndex);
 
 
+});
+});
 
+function genCarton() {
+  let Carton = {
+    B: [], I: [], N: [], G: [], O: [], Pressed: [],  ganaL: false, ganaB: false,     /*****Agrego HasBeenPressed */
+}
+  Carton.B = popColumns("B"); 
+  Carton.I = popColumns("I");
+  Carton.N = popColumns("N");
+  Carton.G = popColumns("G");
+  Carton.O = popColumns("O");
+
+  Carton.N[2] = 0;
+
+  for (let i = 0; i<25; i++){                /////////////////*******InitializoHasbeenPressed */
+    Carton.Pressed.push(false);
+    }
+    Carton.Pressed[12] = true;
+    Carton.N[2] = 0;
+
+  return Carton;
 }
 
+function popColumns(letter) {
+  let column = [];
+  let min = 0;
+  let max = 0;
 
+  switch (letter) {
+    case "B":
+      min = 1;
+      max = 16;
+      break;
+    case "I":
+      min = 16;
+      max = 31;
+      break;
+    case "N":
+      min = 31;
+      max = 46;
+      break;
+    case "G":
+      min = 46;
+      max = 61;
+      break;
+    case "O":
+      min = 61;
+      max = 76;
+      break;
+    default:
+      return column;
+  }
 
+  for (let i = 0; i < 5; i++) {
+    let rnd = Math.floor(Math.random() * (max - min)) + min;
 
+    while (column.includes(rnd)) {
+      rnd = Math.floor(Math.random() * (max - min)) + min;
+    }
+    column.push(rnd);
+  }
 
-
-
-
-
-
-
-
- 
-
-
-
+  return column;
+}

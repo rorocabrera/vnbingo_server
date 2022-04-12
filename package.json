@@ -7,6 +7,11 @@
     "dev": "nodemon index.js",
     "try": "nodemon dev.js"
   },
+  "nodemonConfig": {
+    "ignore": [
+      "*.json"
+    ]
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -17,7 +22,16 @@
     "socket.io": "^4.4.1"
   },
   "devDependencies": {
+    "eslint": "^8.12.0",
     "nodemon": "^2.0.15"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rorocabrera/vnbingo_server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rorocabrera/vnbingo_server/issues"
+  },
+  "homepage": "https://github.com/rorocabrera/vnbingo_server#readme",
   "description": ""
 }
