@@ -35,7 +35,7 @@ let ganadoresBingo = [];
 let state = false;
 let varCron = "*/5 * * * *";
 let nextRun = Cron(varCron).msToNext();
-let bolAspeed = 3000;
+let bolAspeed = 6000;
 let ganalinea = false;
 let ganaBingo = false;
 
