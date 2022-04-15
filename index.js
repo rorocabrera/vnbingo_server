@@ -180,7 +180,7 @@ io.on("connection", (socket) => {
 
  });
 
- socket.on('bingo', (datos, jugada) => { 
+ socket.on('bingo', (datos) => { 
      if(verifyBingo(datos, jugada.jugada)){
     io.emit('stop bingo', );
     let data = JSON.parse(datos);
