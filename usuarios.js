@@ -12,7 +12,6 @@ const addUser = ({sId, uId, email, carton, active}) => {
 
     
     while(index !== -1) {
-        console.log(uId);
      
     index = users.findIndex(function(user){
        return  user.uId == uId;
@@ -36,11 +35,19 @@ const addUser = ({sId, uId, email, carton, active}) => {
  
 }
 
+const updateSocketid = (index, sId ) => {
+    users[index].sId = sId;
+    printUsers(0);
+}
+
 const addCarton = (uId, carton) =>{
 
-    var e = 
-    users.find(e => e.uId == uId).active = true;
-    users.find(e => e.uId == uId).carton.push(carton);
+    let index = isUser(uId);
+    if (index != -1){
+    users[index].active = true;
+    users[index].carton.push(carton);
+    }
+    printUsers(0);
   
 }
 
@@ -68,12 +75,15 @@ const removeUser = (sId) => {
 
  
     if(index != -1) {
-        console.log(users[index].carton)
+     
         if(Object.keys(users[index].carton).length == 0){        
             console.log('se borro', users[index].uId)
             users.splice(index,1)[0];}
 
-        else console.log('se salvo', users[index].uId)
+        else { console.log('se salvo', users[index].uId);
+                users[index].sId = '';
+            
+        }
   
      
         
@@ -95,7 +105,7 @@ function dameCarton (userIndex, cartonIndex) {
 function updateJugada (index, value, cartonIndex, numeroIndex){
 
     users[index].carton[cartonIndex].Pressed[numeroIndex] = value;
-    printUsers(0);
+  
 }
 
 function getPressed (uid){
@@ -108,6 +118,11 @@ function getEmail (uid){
 
 function getActive (index){
     return users[index].active;
+}
+
+function socketsConected()
+{
+    return users.sId;
 }
 
 
@@ -129,6 +144,6 @@ function clearCartones () {
  }
 
 
-module.exports = {addUser, getActive, removeUser, getEmail, makeWinnerLinea,
+module.exports = {socketsConected, updateSocketid, addUser, getActive, removeUser, getEmail, makeWinnerLinea,
         getUser, printUsers, addCarton, isUser, dameCartones, updateJugada, clearCartones, getPressed, dameCarton};
 

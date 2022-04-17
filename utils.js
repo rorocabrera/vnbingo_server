@@ -7,6 +7,7 @@ function verifyLineaCase(caso, carton, jugada){
   let j;
   let matrix = getMatrix(carton);
 
+
   console.log(matrix);
   for (let i = 0; i < 5; i++) {
     switch (caso) {
@@ -85,7 +86,7 @@ function verifyLinea(datos, jugada){
     let index = isUser(data.uid);
     let carton = dameCarton(index, data.ncarton);
     let caso = data.nlinea;
-    console.log('se ha pedido verificar linea ' + caso + ' en carton ' + data.ncarton)
+   
     if (verifyLineaCase(caso, carton, jugada)){
     makeWinnerLinea(index, data.ncarton);
     return true;
@@ -98,7 +99,7 @@ function verifyBingo(datos, jugada){
   let index = isUser(data.uid);
   let carton = dameCarton(index, data.ncarton);
   for(let i = 0 ; i<5; i++){
-    if (!verifyLineaCase(i,carton, jugada)){
+    if (!verifyLineaCase(i + 1,carton, jugada)){
       return false;
     }
   }

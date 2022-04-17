@@ -38,12 +38,13 @@ let nextRun = Cron(varCron).msToNext();
 let bolAspeed = 6000;
 let ganalinea = false;
 let ganaBingo = false;
+let nCartonesv = 0;
 
 clock();
 
 const {verifyLinea, verifyBingo} = require("./utils");
-const { addUser, removeUser, getActive, isUser, getEmail, printUsers, dameCartones, addCarton, updateJugada, clearCartones} = require("./usuarios");
-const {} = require("./utils");
+const { addUser, removeUser, getActive, isUser, getEmail, printUsers, dameCartones, addCarton, updateJugada, clearCartones, socketsConected, updateSocketid} = require("./usuarios");
+
 
 const job = Cron(varCron, () => {
   let flag = false;
@@ -72,7 +73,7 @@ const job = Cron(varCron, () => {
 
     if (ganaBingo) {
       waitforwinnersBingo();
-      console.log("se emitio cantaron bingo" + JSON.stringify(ganadoresBingo));
+      
     }
   }, bolAspeed);
 
@@ -98,6 +99,7 @@ const job = Cron(varCron, () => {
     flag = true;
     await sleep(3000);
     io.emit("cantaron bingo", ganadoresBingo);
+    console.log("se emitio cantaron bingo" + JSON.stringify(ganadoresBingo));
   
     ganaBingo = false;
     endsorteo();
@@ -108,6 +110,7 @@ const job = Cron(varCron, () => {
     clearCartones();
 
     serverstate = true;
+    nCartonesv = 0;
     fs.writeFile('./serverstate.txt', 'true', function (err) {
         if (err) return console.log(err);
         });
@@ -163,6 +166,7 @@ function clock() {
 }
 
 io.on("connection", (socket) => {
+
   socket.emit("state", state);
 
   socket.on('linea', (datos) => { 
@@ -181,7 +185,9 @@ io.on("connection", (socket) => {
  });
 
  socket.on('bingo', (datos) => { 
+   console.log('alguien canto bingo');
      if(verifyBingo(datos, jugada.jugada)){
+       console.log('se verifico el bingo');
     io.emit('stop bingo', );
     let data = JSON.parse(datos);
     let email = getEmail(data.uid);
@@ -195,26 +201,24 @@ io.on("connection", (socket) => {
 
   socket.on("registrar", (data) => {
     let datos = JSON.parse(data);
-   
+    console.log('se recibe registar');
+    socket.emit('cartones vendidos', nCartonesv);
+   let cartones = [];
     let index = isUser(datos.uid);
-    if(index != -1 && getActive(index)){        
-                ///*******************************************/////// */
-        let cartones = dameCartones(index);
-        cartones.forEach(function (e){
-            console.log(e);
-            socket.emit('venta carton', e);
-        });
-
-
+    if(index != -1){        
+        updateSocketid(index, socket.id);
+        cartones = dameCartones(index);
     }
     else addUser({sId: socket.id, uId: datos.uid, email: datos.email, carton: [], active: false});
 
-    socket.emit('jugada', jugada);
+    socket.emit('jugada', {jugada : jugada, cartones: cartones});
   });
 
   socket.on("disconnect", () => {
     removeUser(socket.id);
+
     console.log(socket.id + "  has been disconected");
+    socket.disconnect(true);
     printUsers(0);
   });
 
@@ -225,14 +229,16 @@ io.on("connection", (socket) => {
     addCarton(uid, carton);
     console.log(JSON.stringify(carton));
     socket.emit("venta carton", carton);
+    nCartonesv++;
+    io.emit('cartones vendidos', nCartonesv);
   });
 
   socket.on('jugada', (data) => {
 
-    console.log('se recibio jugada');
+   
     let datos = JSON.parse(data);
     let index = isUser(datos.uid);
-    console.log(index + ' ' + datos.value + ' ' + datos.cartonIndex + ' ' + datos.numeroIndex);
+   
     updateJugada(index, datos.value, datos.cartonIndex, datos.numeroIndex);
 
 
