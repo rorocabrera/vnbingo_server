@@ -228,7 +228,10 @@ io.on("connection", (socket) => {
     let carton = genCarton();
     addCarton(uid, carton);
     console.log(JSON.stringify(carton));
-    socket.emit("venta carton", carton);
+    setTimeout(() => {
+      socket.emit("venta carton", carton);
+    }, 50);
+    
     nCartonesv++;
     io.emit('cartones vendidos', nCartonesv);
   });
