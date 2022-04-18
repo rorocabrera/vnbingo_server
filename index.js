@@ -56,6 +56,7 @@ const job = Cron(varCron, () => {
   ganadoresBingo = [];
   ganaBingo = false;
   io.emit("state", state);
+  io.emit('cartones vendidos', nCartonesv);
 
   const intervalo = setInterval(() => {
     if (i == 75) {
@@ -111,6 +112,7 @@ const job = Cron(varCron, () => {
 
     serverstate = true;
     nCartonesv = 0;
+    
     fs.writeFile('./serverstate.txt', 'true', function (err) {
         if (err) return console.log(err);
         });
