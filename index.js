@@ -33,9 +33,9 @@ let jugada = {jugada: [], seCantol: false};
 let ganadoresLinea = [];
 let ganadoresBingo = [];
 let state = false;
-let varCron = "*/5 * * * *";
+let varCron = "*/10 * * * *";
 let nextRun = Cron(varCron).msToNext();
-let bolAspeed = 3000;
+let bolAspeed = 5500;
 let ganalinea = false;
 let ganaBingo = false;
 let nCartonesv = 0;
@@ -101,7 +101,6 @@ const job = Cron(varCron, () => {
     await sleep(3000);
     io.emit("cantaron bingo", ganadoresBingo);
     console.log("se emitio cantaron bingo" + JSON.stringify(ganadoresBingo));
-  
     ganaBingo = false;
     endsorteo();
   }
