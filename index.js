@@ -35,7 +35,7 @@ let ganadoresBingo = [];
 let state = false;
 let varCron = "*/10 * * * *";
 let nextRun = Cron(varCron).msToNext();
-let bolAspeed = 5500;
+let bolAspeed = 6000;
 let ganalinea = false;
 let ganaBingo = false;
 let nCartonesv = 0;
@@ -111,6 +111,7 @@ const job = Cron(varCron, () => {
 
     serverstate = true;
     nCartonesv = 0;
+    io.emit('cartones vendidos', nCartonesv);
     
     fs.writeFile('./serverstate.txt', 'true', function (err) {
         if (err) return console.log(err);
@@ -228,10 +229,10 @@ io.on("connection", (socket) => {
 
     let carton = genCarton();
     addCarton(uid, carton);
-    console.log(JSON.stringify(carton));
-    setTimeout(() => {
+  
+  
       socket.emit("venta carton", carton);
-    }, 50);
+   
     
     nCartonesv++;
     io.emit('cartones vendidos', nCartonesv);

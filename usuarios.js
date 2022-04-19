@@ -105,6 +105,8 @@ function dameCarton (userIndex, cartonIndex) {
 function updateJugada (index, value, cartonIndex, numeroIndex){
 
     users[index].carton[cartonIndex].Pressed[numeroIndex] = value;
+    printUsers(0);
+
   
 }
 

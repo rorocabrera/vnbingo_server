@@ -7,8 +7,6 @@ function verifyLineaCase(caso, carton, jugada){
   let j;
   let matrix = getMatrix(carton);
 
-
-  console.log(matrix);
   for (let i = 0; i < 5; i++) {
     switch (caso) {
       case 1:
