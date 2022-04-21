@@ -98,18 +98,20 @@ const job = Cron(varCron, () => {
   }
   async function waitforwinnersBingo() {
     flag = true;
+    ganaBingo = false;ro
     await sleep(3000);
     io.emit("cantaron bingo", ganadoresBingo);
     console.log("se emitio cantaron bingo" + JSON.stringify(ganadoresBingo));
-    ganaBingo = false;
+
     endsorteo();
   }
 
   async function endsorteo() {
     clearInterval(intervalo);
+    serverstate = true;
     clearCartones();
 
-    serverstate = true;
+    
     nCartonesv = 0;
     io.emit('cartones vendidos', nCartonesv);
     
@@ -243,8 +245,9 @@ io.on("connection", (socket) => {
    
     let datos = JSON.parse(data);
     let index = isUser(datos.uid);
-   
+   if(index != -1){
     updateJugada(index, datos.value, datos.cartonIndex, datos.numeroIndex);
+  }
 
 
 });
