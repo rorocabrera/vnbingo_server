@@ -9,6 +9,7 @@ const { isSharedArrayBuffer } = require('util/types');
 const addUser = ({sId, uId, email, carton, active}) => {
  
     let index = 0;
+  
 
     
     while(index !== -1) {
@@ -19,7 +20,9 @@ const addUser = ({sId, uId, email, carton, active}) => {
    
 
     if(index !== -1)  {
+    
         users.splice(index,1)[0];
+
     }
    
 
@@ -30,7 +33,7 @@ const addUser = ({sId, uId, email, carton, active}) => {
  
     
     printUsers(sId);
-    return user;
+
     
  
 }

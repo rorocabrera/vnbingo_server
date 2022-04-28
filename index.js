@@ -43,7 +43,10 @@ let nCartonesv = 0;
 clock();
 
 const {verifyLinea, verifyBingo} = require("./utils");
+const {prueba} = require("./crypto");
 const { addUser, removeUser, getActive, isUser, getEmail, printUsers, dameCartones, addCarton, updateJugada, clearCartones, socketsConected, updateSocketid} = require("./usuarios");
+
+prueba();
 
 
 const job = Cron(varCron, () => {
@@ -213,7 +216,9 @@ io.on("connection", (socket) => {
         updateSocketid(index, socket.id);
         cartones = dameCartones(index);
     }
-    else addUser({sId: socket.id, uId: datos.uid, email: datos.email, carton: [], active: false});
+    else 
+    addUser({sId: socket.id, uId: datos.uid, email: datos.email, carton: [], active: false});
+  
 
     socket.emit('jugada', {jugada : jugada, cartones: cartones});
   });
