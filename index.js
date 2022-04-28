@@ -46,8 +46,6 @@ const {verifyLinea, verifyBingo} = require("./utils");
 const {prueba} = require("./crypto");
 const { addUser, removeUser, getActive, isUser, getEmail, printUsers, dameCartones, addCarton, updateJugada, clearCartones, socketsConected, updateSocketid} = require("./usuarios");
 
-prueba();
-
 
 const job = Cron(varCron, () => {
   let flag = false;
