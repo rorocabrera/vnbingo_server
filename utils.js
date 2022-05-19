@@ -1,5 +1,69 @@
 const { dameCarton, isUser, makeWinnerLinea } = require("./usuarios");
 
+function genCarton() {
+  let Carton = {
+    B: [], I: [], N: [], G: [], O: [], Pressed: [],  ganaL: false, ganaB: false,     /*****Agrego HasBeenPressed */
+}
+  Carton.B = popColumns("B"); 
+  Carton.I = popColumns("I");
+  Carton.N = popColumns("N");
+  Carton.G = popColumns("G");
+  Carton.O = popColumns("O");
+
+  Carton.N[2] = 0;
+
+  for (let i = 0; i<25; i++){                /////////////////*******InitializoHasbeenPressed */
+    Carton.Pressed.push(false);
+    }
+    Carton.Pressed[12] = true;
+    Carton.N[2] = 0;
+
+  return Carton;
+}
+
+function popColumns(letter) {
+  let column = [];
+  let min = 0;
+  let max = 0;
+
+  switch (letter) {
+    case "B":
+      min = 1;
+      max = 16;
+      break;
+    case "I":
+      min = 16;
+      max = 31;
+      break;
+    case "N":
+      min = 31;
+      max = 46;
+      break;
+    case "G":
+      min = 46;
+      max = 61;
+      break;
+    case "O":
+      min = 61;
+      max = 76;
+      break;
+    default:
+      return column;
+  }
+
+  for (let i = 0; i < 5; i++) {
+    let rnd = Math.floor(Math.random() * (max - min)) + min;
+
+    while (column.includes(rnd)) {
+      rnd = Math.floor(Math.random() * (max - min)) + min;
+    }
+    column.push(rnd);
+  }
+
+  return column;
+}
+
+
 
 
 
@@ -125,4 +189,4 @@ function getMatrix(carton){
 
 
 
-module.exports = {verifyLinea, verifyBingo};
+module.exports = {verifyLinea, verifyBingo, genCarton};

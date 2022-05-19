@@ -4,12 +4,24 @@ const app = express();
 const schedule = require("node-schedule");
 const Cron = require("croner");
 const port = process.env.PORT || 5050;
+const mongoose = require("mongoose");
+const UserDb = require('./public/models/userDb');
+var bodyParser = require('body-parser');
+const {createAddress} = require('./crypto');
+const {verifyLinea, verifyBingo, genCarton} = require("./utils");
+const { addUser, removeUser, isUser, getEmail, 
+        printUsers, dameCartones, addCarton, updateJugada, clearCartones, 
+         updateSocketid} = require("./usuarios");
 
 //settings
 app.set("port", port);
 
 //static files
 app.use(express.static(path.join(__dirname, "public")));
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+
+
 
 //start the server
 const server = app.listen(app.get("port"), () => {
@@ -19,13 +31,38 @@ const server = app.listen(app.get("port"), () => {
 
 const fs = require('fs');    //importar a index
 
+mongoose.connect(process.env.MONGO_URI, () => {
+  console.log("conncted to db")});
+
 fs.readFile('./serverstate.txt',function(err, estado){
     if (err) 
         throw err;   
     serverstate = estado == 'true';  
 
-   
 });
+
+app.post('/regwallet', (req, res) => {
+  console.log('se recibe peticion de registro de wallet');
+
+  var wallet = createAddress();
+  console.log(req.body);
+  console.log(wallet)
+
+  const userDb = new UserDb({
+    uId: req.body.uid,
+    wallet: wallet.key
+  });
+
+  userDb.save().then((result) =>{
+  res.send({"wallet": wallet.wallet})}
+  ).catch((err) => {
+    console.log(err);
+  });
+
+});
+
+
+
 
 const SocketIO = require("socket.io");
 const io = SocketIO(server);
@@ -42,9 +79,8 @@ let nCartonesv = 0;
 
 clock();
 
-const {verifyLinea, verifyBingo} = require("./utils");
-const {prueba} = require("./crypto");
-const { addUser, removeUser, getActive, isUser, getEmail, printUsers, dameCartones, addCarton, updateJugada, clearCartones, socketsConected, updateSocketid} = require("./usuarios");
+
+
 
 
 const job = Cron(varCron, () => {
@@ -210,6 +246,10 @@ io.on("connection", (socket) => {
     socket.emit('cartones vendidos', nCartonesv);
    let cartones = [];
     let index = isUser(datos.uid);
+
+
+
+
     if(index != -1){        
         updateSocketid(index, socket.id);
         cartones = dameCartones(index);
@@ -256,65 +296,3 @@ io.on("connection", (socket) => {
 });
 });
 
-function genCarton() {
-  let Carton = {
-    B: [], I: [], N: [], G: [], O: [], Pressed: [],  ganaL: false, ganaB: false,     /*****Agrego HasBeenPressed */
-}
-  Carton.B = popColumns("B"); 
-  Carton.I = popColumns("I");
-  Carton.N = popColumns("N");
-  Carton.G = popColumns("G");
-  Carton.O = popColumns("O");
-
-  Carton.N[2] = 0;
-
-  for (let i = 0; i<25; i++){                /////////////////*******InitializoHasbeenPressed */
-    Carton.Pressed.push(false);
-    }
-    Carton.Pressed[12] = true;
-    Carton.N[2] = 0;
-
-  return Carton;
-}
-
-function popColumns(letter) {
-  let column = [];
-  let min = 0;
-  let max = 0;
-
-  switch (letter) {
-    case "B":
-      min = 1;
-      max = 16;
-      break;
-    case "I":
-      min = 16;
-      max = 31;
-      break;
-    case "N":
-      min = 31;
-      max = 46;
-      break;
-    case "G":
-      min = 46;
-      max = 61;
-      break;
-    case "O":
-      min = 61;
-      max = 76;
-      break;
-    default:
-      return column;
-  }
-
-  for (let i = 0; i < 5; i++) {
-    let rnd = Math.floor(Math.random() * (max - min)) + min;
-
-    while (column.includes(rnd)) {
-      rnd = Math.floor(Math.random() * (max - min)) + min;
-    }
-    column.push(rnd);
-  }
-
-  return column;
-}
